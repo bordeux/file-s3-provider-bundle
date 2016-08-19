@@ -70,6 +70,8 @@ class S3StorageProvider extends StorageProvider
             'Bucket' => $this->bucket,
             'Key' => $this->getKey($bucket, $id)
         ));
+
+        $stream = $result->get('stream');
     }
 
     /**

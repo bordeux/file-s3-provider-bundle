@@ -30,8 +30,11 @@ class S3Factory implements StorageFactory
      */
     public function getProvider(Storage $storage)
     {
+        $params = $storage->getParametersArray();
+
         return new S3StorageProvider(
-            $this->getAwsClient($storage)
+            $this->getAwsClient($storage, $params),
+            $params['bucket']
         );
     }
 
@@ -40,7 +43,8 @@ class S3Factory implements StorageFactory
      * @param array $params
      * @author Krzysztof Bednarczyk
      */
-    public function validParameters(array $params){
+    public function validParameters(array $params)
+    {
         //@todo: check parameters and throw exceptions
     }
 
@@ -49,14 +53,12 @@ class S3Factory implements StorageFactory
      * @return S3Client
      * @author Krzysztof Bednarczyk
      */
-    public function getAwsClient(Storage $storage)
+    public function getAwsClient(Storage $storage, $params)
     {
         if (isset($this->clients[$storage->getId()])) {
             return $this->clients[$storage->getId()];
         }
 
-
-        $params = $storage->getParametersArray();
 
         $this->validParameters($params);
 
