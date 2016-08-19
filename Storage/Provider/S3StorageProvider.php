@@ -36,12 +36,35 @@ class S3StorageProvider extends StorageProvider
      */
     public function put($bucket, $id, $resource)
     {
-        $this->client->putObject(array(
-            'Bucket' => $this->bucket,
-            'Key' => $this->getKey($bucket, $id),
-            'Body' => $resource,
-            'ACL' => 'public-read'
-        ));
+        try {
+            $this->client->putObject(array(
+                'Bucket' => $this->bucket,
+                'Key' => $this->getKey($bucket, $id),
+                'Body' => $resource,
+                'ACL' => 'public-read'
+            ));
+        } catch (\Aws\S3\Exception\S3Exception $e) {
+            if ($e->getAwsErrorCode() === 'NoSuchBucket') {
+                $this->createBucket();
+                return $this->put($bucket, $id, $resource);
+            }
+            throw $e;
+        }
+
+        return true;
+    }
+
+
+    /**
+     * @return bool
+     * @author Krzysztof Bednarczyk
+     */
+    protected function createBucket()
+    {
+
+        $this->client->createBucket([
+            'Bucket' => $this->bucket
+        ]);
 
         return true;
     }
@@ -66,12 +89,17 @@ class S3StorageProvider extends StorageProvider
      */
     public function fetch($bucket, $id)
     {
+
         $result = $this->client->getObject(array(
             'Bucket' => $this->bucket,
             'Key' => $this->getKey($bucket, $id)
         ));
 
-        $stream = $result->get('stream');
+        /** @var \GuzzleHttp\Psr7\Stream $body */
+        $body = $result['Body'];
+
+
+        return $body->detach();
     }
 
     /**
