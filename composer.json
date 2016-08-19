@@ -1,11 +1,11 @@
 {
-  "name": "bordeux/file-bundle-s3-provider",
-  "type": "file-bundle-provider",
+  "name": "bordeux/file-s3-provider-bundle",
+  "type": "file-provider-bundle",
   "description": "Symfony File bundle provider for File Bundle",
   "keywords": [
     "s3", "aws", "file-bundle"
   ],
-  "homepage": "http://bednaczyk.me/file-bundle-s3-provider",
+  "homepage": "http://bednaczyk.me/file-s3-provider-bundle",
   "license": "MIT",
   "authors": [
     {
