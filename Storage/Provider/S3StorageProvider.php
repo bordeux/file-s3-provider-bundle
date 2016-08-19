@@ -12,12 +12,18 @@ class S3StorageProvider extends StorageProvider
     protected $client;
 
     /**
+     * @var string
+     */
+    protected $bucket;
+
+    /**
      * @author Krzysztof Bednarczyk
      * S3StorageProvider constructor.
      */
-    public function __construct(S3Client $client)
+    public function __construct(S3Client $client, $bucket)
     {
         $this->client = $client;
+        $this->bucket = $bucket;
     }
 
 
@@ -30,7 +36,26 @@ class S3StorageProvider extends StorageProvider
      */
     public function put($bucket, $id, $resource)
     {
-        // TODO: Implement put() method.
+        $this->client->putObject(array(
+            'Bucket' => $this->bucket,
+            'Key' => $this->getKey($bucket, $id),
+            'Body' => $resource,
+            'ACL' => 'public-read'
+        ));
+
+        return true;
+    }
+
+    /**
+     * @param string $bucket
+     * @param string $id
+     * @return string
+     * @author Krzysztof Bednarczyk
+     */
+    public function getKey($bucket, $id)
+    {
+        $cat = substr(md5($id), 0, 3);
+        return "{$bucket}/{$cat}/{$id}.file";
     }
 
     /**
@@ -41,7 +66,10 @@ class S3StorageProvider extends StorageProvider
      */
     public function fetch($bucket, $id)
     {
-        // TODO: Implement fetch() method.
+        $result = $this->client->getObject(array(
+            'Bucket' => $this->bucket,
+            'Key' => $this->getKey($bucket, $id)
+        ));
     }
 
     /**
@@ -52,7 +80,12 @@ class S3StorageProvider extends StorageProvider
      */
     public function remove($bucket, $id)
     {
-        // TODO: Implement remove() method.
+        $this->client->deleteObject([
+            'Bucket' => $this->bucket,
+            'Key' => $this->getKey($bucket, $id)
+        ]);
+
+        return true;
     }
 
     /**
@@ -63,6 +96,15 @@ class S3StorageProvider extends StorageProvider
      */
     public function exist($bucket, $id)
     {
-        // TODO: Implement exist() method.
+        try {
+            $info = $this->client->headObject([
+                'Bucket' => $this->bucket,
+                'Key' => $this->getKey($bucket, $id)
+            ]);
+        } catch (\Exception $e) {
+            return false;
+        }
+
+        return $info ? true : null;
     }
 }

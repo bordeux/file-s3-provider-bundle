@@ -65,7 +65,8 @@ class S3Factory implements StorageFactory
                 $params['access_key'],
                 $params['secret_key']
             ),
-            'region' => $params['region']
+            'region' => $params['region'],
+            'bucket' => $params['bucket']
         ));
 
         $this->clients[$storage->getId()] = $client;
