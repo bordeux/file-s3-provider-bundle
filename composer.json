@@ -14,8 +14,11 @@
     }
   ],
   "require": {
+    "bordeux/file-bundle" : "1.*",
+    "aws/aws-sdk-php" : "3.*"
   },
   "require-dev": {
+
   },
   "autoload": {
     "psr-4": {
