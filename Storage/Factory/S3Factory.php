@@ -34,7 +34,8 @@ class S3Factory implements StorageFactory
 
         return new S3StorageProvider(
             $this->getAwsClient($storage, $params),
-            $params['bucket']
+            $params['bucket'],
+            $params['dir']
         );
     }
 

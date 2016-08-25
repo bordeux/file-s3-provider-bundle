@@ -17,13 +17,22 @@ class S3StorageProvider extends StorageProvider
     protected $bucket;
 
     /**
+     * @var string
+     */
+    protected $dir;
+
+    /**
      * @author Krzysztof Bednarczyk
      * S3StorageProvider constructor.
+     * @param S3Client $client
+     * @param string $bucket
+     * @param string $dir
      */
-    public function __construct(S3Client $client, $bucket)
+    public function __construct(S3Client $client, string $bucket, string $dir)
     {
         $this->client = $client;
         $this->bucket = $bucket;
+        $this->dir = $dir;
     }
 
 
@@ -34,19 +43,19 @@ class S3StorageProvider extends StorageProvider
      * @return boolean
      * @author Krzysztof Bednarczyk
      */
-    public function put($bucket, $id, $resource)
+    public function put(int $id, resource $resource) : bool
     {
         try {
             $this->client->putObject(array(
                 'Bucket' => $this->bucket,
-                'Key' => $this->getKey($bucket, $id),
+                'Key' => $this->getKey($id),
                 'Body' => $resource,
                 'ACL' => 'public-read'
             ));
         } catch (\Aws\S3\Exception\S3Exception $e) {
             if ($e->getAwsErrorCode() === 'NoSuchBucket') {
                 $this->createBucket();
-                return $this->put($bucket, $id, $resource);
+                return $this->put( $id, $resource);
             }
             throw $e;
         }
@@ -71,28 +80,26 @@ class S3StorageProvider extends StorageProvider
 
     /**
      * @param string $bucket
-     * @param string $id
+     * @param int $id
      * @return string
      * @author Krzysztof Bednarczyk
      */
-    public function getKey($bucket, $id)
+    public function getKey(int $id)
     {
-        $cat = substr(md5($id), 0, 3);
-        return "{$bucket}/{$cat}/{$id}.file";
+        $cat = ceil($id/1000);
+        return "{$this->dir}/{$cat}/{$id}.file";
     }
 
     /**
-     * @param string $bucket
      * @param string $id
      * @return resource
      * @author Krzysztof Bednarczyk
      */
-    public function fetch($bucket, $id)
+    public function fetch(int $id) : resource
     {
-
         $result = $this->client->getObject(array(
             'Bucket' => $this->bucket,
-            'Key' => $this->getKey($bucket, $id)
+            'Key' => $this->getKey($id)
         ));
 
         /** @var \GuzzleHttp\Psr7\Stream $body */
@@ -103,38 +110,37 @@ class S3StorageProvider extends StorageProvider
     }
 
     /**
-     * @param string $bucket
-     * @param string $id
-     * @return mixed
+     * @param int $id
+     * @return bool
      * @author Krzysztof Bednarczyk
      */
-    public function remove($bucket, $id)
+    public function remove(int $id) : bool
     {
         $this->client->deleteObject([
             'Bucket' => $this->bucket,
-            'Key' => $this->getKey($bucket, $id)
+            'Key' => $this->getKey($id)
         ]);
 
         return true;
     }
 
     /**
-     * @param string $bucket
+
      * @param string $id
      * @return boolean
      * @author Krzysztof Bednarczyk
      */
-    public function exist($bucket, $id)
+    public function exist(int $id) : bool
     {
         try {
             $info = $this->client->headObject([
                 'Bucket' => $this->bucket,
-                'Key' => $this->getKey($bucket, $id)
+                'Key' => $this->getKey($id)
             ]);
         } catch (\Exception $e) {
             return false;
         }
 
-        return $info ? true : null;
+        return $info ? true : false;
     }
 }
