@@ -2,6 +2,7 @@
 namespace Bordeux\Bundle\FileS3ProviderBundle\Storage\Provider;
 
 use Aws\S3\S3Client;
+use Bordeux\Bundle\FileBundle\Exception\Provider\FileNotFoundException;
 use Bordeux\Bundle\FileBundle\Storage\StorageProvider;
 
 class S3StorageProvider extends StorageProvider
@@ -43,7 +44,7 @@ class S3StorageProvider extends StorageProvider
      * @return boolean
      * @author Krzysztof Bednarczyk
      */
-    public function put(int $id, resource $resource) : bool
+    public function put(int $id, \resource $resource) : bool
     {
         try {
             $this->client->putObject(array(
@@ -95,15 +96,25 @@ class S3StorageProvider extends StorageProvider
      * @return resource
      * @author Krzysztof Bednarczyk
      */
-    public function fetch(int $id) : resource
+    public function fetch(int $id) : \resource
     {
-        $result = $this->client->getObject(array(
-            'Bucket' => $this->bucket,
-            'Key' => $this->getKey($id)
-        ));
+        try {
+            $result = $this->client->getObject(array(
+                'Bucket' => $this->bucket,
+                'Key' => $this->getKey($id)
+            ));
 
-        /** @var \GuzzleHttp\Psr7\Stream $body */
-        $body = $result['Body'];
+            /** @var \GuzzleHttp\Psr7\Stream $body */
+            $body = $result['Body'];
+
+        } catch (\Aws\S3\Exception\S3Exception $e) {
+            if ($e->getAwsErrorCode() === 'NoSuchKey') {
+                throw new FileNotFoundException(
+                    $e->getMessage()
+                );
+            }
+            throw $e;
+        }
 
 
         return $body->detach();
